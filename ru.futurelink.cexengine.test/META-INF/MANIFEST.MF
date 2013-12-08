@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: ru.futurelink.cexengine.test
+Bundle-SymbolicName: ru.futurelink.cexengine.test;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Export-Package: ru.futurelink.cexengine.test
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Import-Package: javax.persistence;version="2.0.4",
+ org.osgi.framework;version="1.7.0",
+ org.osgi.util.tracker;version="1.5.1",
+ ru.futurelink.cexengine.orm,
+ ru.futurelink.cexengine.trade
+Bundle-Activator: ru.futurelink.cexengine.test.Activator
+Bundle-ActivationPolicy: lazy
