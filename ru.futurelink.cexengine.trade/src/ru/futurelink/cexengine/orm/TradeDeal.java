@@ -90,6 +90,10 @@ public class TradeDeal implements Serializable {
 	private BigDecimal mAmount;
 	public BigDecimal getAmount() { return mAmount; }
 
+	@Column(name="price")
+	private BigDecimal mPrice;
+	public void setPrice(BigDecimal price) { mPrice = price; }
+	
 	@Index
 	@Column(name="executionTime")
 	@Temporal(TemporalType.TIMESTAMP)
@@ -118,6 +122,7 @@ public class TradeDeal implements Serializable {
 		TradeDeal deal = new TradeDeal();
 		deal.mExecutionTime = Calendar.getInstance().getTime();
 		deal.mTool = buyOrder.getTool();
+		deal.mPrice = buyOrder.getPrice();
 
 		deal.mBuyerAccount = buyOrder.getAccount();
 		deal.mBuyerWalletCurrency1 = buyOrder.getWalletCurrency1();

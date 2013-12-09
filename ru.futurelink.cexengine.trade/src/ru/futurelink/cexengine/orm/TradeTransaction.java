@@ -21,6 +21,10 @@ import org.eclipse.persistence.annotations.Index;
 @Entity
 public class TradeTransaction {
 
+	static final public int TRANSACTION_BLOCK = 0;	
+	static final public int TRANSACTION_UNBLOCK = 1;
+	static final public int TRANSACTION_MOVE = 2;
+
 	/**
 	 * ID объекта
 	 */
@@ -39,15 +43,27 @@ public class TradeTransaction {
 	@Column(name="sum")
 	private BigDecimal mSum;
 	public void setSum(BigDecimal sum) { mSum = sum; }
+	public BigDecimal getSum() { return mSum; }
 	
 	@Index
 	@JoinColumn(name="deal")
 	private TradeDeal mDeal;
 	public void setDeal(TradeDeal deal) { mDeal = deal; }
 
+	@Index
+	@JoinColumn(name="dealOrder")
+	private TradeOrder mOrder;
+	public void setOrder(TradeOrder order) { mOrder = order; }
+	
 	@Column(name="currencyTitle")
 	private String mCurrencyTitle;
 	public void setCurrencyTitle(String title) { mCurrencyTitle = title; }
+	
+	@Index
+	@Column(name="transactionType")
+	private Integer mTransactionType;
+	public void setType(Integer type) { mTransactionType = type; }
+	public Integer getType() { return mTransactionType; }
 	
 	@Column(name="remark")
 	private String mRemark;

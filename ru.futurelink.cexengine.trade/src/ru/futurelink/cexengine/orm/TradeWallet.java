@@ -64,13 +64,6 @@ public class TradeWallet implements Serializable {
 		if (mBlockedBalance == null) mBlockedBalance = new BigDecimal(0);
 		return mBlockedBalance; 
 	}
-
-	@Column(name="unblockedBalance")
-	private BigDecimal mUnblockedBalance;
-	public BigDecimal getUnblockedBalance()  {
-		if (mUnblockedBalance == null) mUnblockedBalance = new BigDecimal(0);
-		return mUnblockedBalance; 
-	}
 	
 	public BigDecimal getFreeBalance() { return mBalance.subtract(mBlockedBalance); } 
 	
@@ -102,6 +95,16 @@ public class TradeWallet implements Serializable {
 	 * @param sum
 	 */
 	public void unblockSum(BigDecimal sum) {
-		mUnblockedBalance = getUnblockedBalance().add(sum);
+		mBlockedBalance = getBlockedBalance().subtract(sum);
+	}
+	
+	@Override
+	public boolean equals(Object obj) {		
+		return getId().equals(obj);
+	}
+	
+	@Override
+	public int hashCode() {
+		return getId().hashCode();
 	}
 }

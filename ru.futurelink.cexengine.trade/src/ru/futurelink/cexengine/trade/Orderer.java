@@ -14,6 +14,7 @@ import ru.futurelink.cexengine.orm.TradeAccount;
 import ru.futurelink.cexengine.orm.TradeCurrency;
 import ru.futurelink.cexengine.orm.TradeTool;
 import ru.futurelink.cexengine.orm.TradeOrder;
+import ru.futurelink.cexengine.orm.TradeTransaction;
 import ru.futurelink.cexengine.orm.TradeWallet;
 
 /**
@@ -49,21 +50,30 @@ public class Orderer {
 		order.setType(type);
 		order.setPlacedTime(Calendar.getInstance().getTime());
 		order.setActive(ITradeService.ACTIVE);
-		
+
 		// Привязываем кошелек сразу к ордеру
 		// и блокируем сумму в кошельке.
 		order.setWalletCurrency1(walletPair[0]);
 		order.setWalletCurrency2(walletPair[1]);
-		/*if (type == ITradeService.ORDER_BUY)
-			walletPair[1].blockSum(price.multiply(amount));
+
+		// Разблокируем сумму равную списанию
+		TradeTransaction tr1 = new TradeTransaction();
+		tr1.setDeal(null);
+		tr1.setOrder(order);
+		tr1.setWallet(walletPair[1]);
+		if (type == ITradeService.ORDER_BUY)
+			tr1.setSum(price.multiply(amount));
 		else
-			walletPair[1].blockSum(amount);*/
+			tr1.setSum(amount);
+		tr1.setType(TradeTransaction.TRANSACTION_BLOCK);
+		tr1.setCurrencyTitle(walletPair[1].getCurrencyTitle());
+		tr1.setProcessed(false);
 
 		mEm.getTransaction().begin();
 		mEm.persist(order);
-		//mEm.merge(walletPair[1]);
+		mEm.persist(tr1);
 		mEm.getTransaction().commit();
-		
+
 		return true;
 	}
 

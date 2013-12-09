@@ -199,11 +199,11 @@ public class OrderExecutor {
 			@Override
 			public void QueueExecuteComplete(TradeTool tool, BigDecimal price) {
 				executionThreadBlock(tool, price, false); // Разблокируем инструмент+цену
-				mLogger.info("Queue iteration on price = {} completed...", price);
+				mLogger.debug("Queue iteration on price = {} completed...", price);
 			}
 		};
 
-		mLogger.info("Запуск очереди для обработки ордеров по цене {} количество SELL/BUY: {}/{}", price, sellQueue.size(), buyQueue.size());
+		mLogger.debug("Running queue to process orders by price {}, quantity for SELL/BUY is {}/{}", price, sellQueue.size(), buyQueue.size());
 		
 		// Создаем поток исполнителя
 		ExecutorRunnable runnable = new ExecutorRunnable();
@@ -215,7 +215,7 @@ public class OrderExecutor {
 		runnable.setTool(tool);
 		runnable.setExecutionListener(mExecutionListener);
 
-		// Запускаем обработку ордеров
+		// Running processor thread
 		Thread thread = new Thread(runnable);
 		thread.start();
 	}
