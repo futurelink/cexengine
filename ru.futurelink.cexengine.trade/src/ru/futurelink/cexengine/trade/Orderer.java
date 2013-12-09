@@ -14,6 +14,7 @@ import ru.futurelink.cexengine.orm.TradeAccount;
 import ru.futurelink.cexengine.orm.TradeCurrency;
 import ru.futurelink.cexengine.orm.TradeTool;
 import ru.futurelink.cexengine.orm.TradeOrder;
+import ru.futurelink.cexengine.orm.TradeTransaction;
 import ru.futurelink.cexengine.orm.TradeWallet;
 
 /**
@@ -49,21 +50,30 @@ public class Orderer {
 		order.setType(type);
 		order.setPlacedTime(Calendar.getInstance().getTime());
 		order.setActive(ITradeService.ACTIVE);
-		
+
 		// Привязываем кошелек сразу к ордеру
 		// и блокируем сумму в кошельке.
-		order.setWalletCurrency1(walletPair[0]);
-		order.setWalletCurrency2(walletPair[1]);
-		/*if (type == ITradeService.ORDER_BUY)
-			walletPair[1].blockSum(price.multiply(amount));
-		else
-			walletPair[1].blockSum(amount);*/
+		order.setDebitWallet(walletPair[0]);
+		order.setCreditWallet(walletPair[1]);
+
+		// Разблокируем сумму равную списанию
+		TradeTransaction tr1 = new TradeTransaction();
+		tr1.setDeal(null);
+		tr1.setOrder(order);
+		if (type == ITradeService.ORDER_BUY) {
+			tr1.setSum(price.multiply(amount));
+		} else {
+			tr1.setSum(amount);
+		}
+		tr1.setWallet(order.getCreditWallet());
+		tr1.setType(TradeTransaction.TRANSACTION_BLOCK);
+		tr1.setProcessed(false);
 
 		mEm.getTransaction().begin();
 		mEm.persist(order);
-		//mEm.merge(walletPair[1]);
+		mEm.persist(tr1);
 		mEm.getTransaction().commit();
-		
+
 		return true;
 	}
 
@@ -110,9 +120,9 @@ public class Orderer {
 	private TradeWallet getWallet(TradeAccount account, TradeTool tool, Short type) {
 		TradeCurrency walletCurrency;
 		if (type == 0)
-			walletCurrency = tool.getCurrency2();
+			walletCurrency = tool.getCurrency1();
 		else
-			walletCurrency = tool.getCurrency1();		
+			walletCurrency = tool.getCurrency2();		
 		
 		TypedQuery<TradeWallet> wq = mEm.createQuery("select w from TradeWallet w where "
 				+ "w.mAccount = :account and w.mCurrency = :currency", TradeWallet.class);
@@ -123,7 +133,7 @@ public class Orderer {
 			TradeWallet w = new TradeWallet();
 			w.setCurrency(walletCurrency);
 			w.setAccount(account);
-			
+
 			mEm.getTransaction().begin();
 			mEm.persist(w);
 			mEm.getTransaction().commit();

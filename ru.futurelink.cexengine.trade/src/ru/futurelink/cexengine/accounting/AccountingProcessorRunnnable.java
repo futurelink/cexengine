@@ -51,35 +51,60 @@ public class AccountingProcessorRunnnable implements Runnable {
 				BigDecimal income = deal.getAmount().multiply(deal.getSellOrder().getPrice());
 				BigDecimal transactionFee = new BigDecimal(0);
 				BigDecimal buyerIncome = deal.getAmount().subtract(transactionFee);
+			
+				// Зачисляем покупателю деньги
+				TradeTransaction tr4 = new TradeTransaction();
+				tr4.setWallet(deal.getBuyerDebitWallet());
+				tr4.setSum(buyerIncome);
+				tr4.setType(TradeTransaction.TRANSACTION_MOVE);
+				tr4.setOrder(deal.getBuyOrder());
+				tr4.setDeal(deal);
+				tr4.setProcessed(false);				
 
-				// Создаем транзакцию, списываем с одного кошелька, зачисляем на другой.
+				// Разблокируем сумму для покупателя
+				TradeTransaction tr5 = new TradeTransaction();
+				tr5.setWallet(deal.getBuyerCreditWallet());
+				tr5.setSum(income);
+				tr5.setType(TradeTransaction.TRANSACTION_UNBLOCK);
+				tr5.setOrder(deal.getBuyOrder());
+				tr5.setDeal(deal);
+				tr5.setProcessed(false);
+
+				// Списываем сумму покупателя
+				TradeTransaction tr6 = new TradeTransaction();
+				tr6.setWallet(deal.getBuyerCreditWallet());
+				tr6.setSum(new BigDecimal(0).subtract(income));
+				tr6.setType(TradeTransaction.TRANSACTION_MOVE);
+				tr6.setOrder(deal.getBuyOrder());
+				tr6.setDeal(deal);
+				tr6.setProcessed(false);
+
+				// Зачисляем деньги
 				TradeTransaction tr1 = new TradeTransaction();
-				tr1.setWallet(deal.getSellerWalletCurrency2());
+				tr1.setWallet(deal.getSellerDebitWallet());
 				tr1.setSum(income);
+				tr1.setType(TradeTransaction.TRANSACTION_MOVE);
+				tr1.setOrder(deal.getSellOrder());
 				tr1.setDeal(deal);
-				tr1.setCurrencyTitle(deal.getSellerWalletCurrency2().getCurrencyTitle());
 				tr1.setProcessed(false);				
 
+				// Списываем деньги
 				TradeTransaction tr2 = new TradeTransaction();
-				tr2.setWallet(deal.getSellerWalletCurrency1());
+				tr2.setWallet(deal.getSellerCreditWallet());
 				tr2.setSum(new BigDecimal(0).subtract(deal.getAmount()));
+				tr2.setType(TradeTransaction.TRANSACTION_MOVE);
+				tr2.setOrder(deal.getSellOrder());
 				tr2.setDeal(deal);
-				tr2.setCurrencyTitle(deal.getSellerWalletCurrency1().getCurrencyTitle());
 				tr2.setProcessed(false);				
-
+				
+				// Разблокируем сумму равную списанию
 				TradeTransaction tr3 = new TradeTransaction();
-				tr3.setWallet(deal.getBuyerWalletCurrency2());
-				tr3.setSum(buyerIncome);
+				tr3.setWallet(deal.getSellerCreditWallet());
+				tr3.setSum(deal.getAmount());
+				tr3.setType(TradeTransaction.TRANSACTION_UNBLOCK);
+				tr3.setOrder(deal.getSellOrder());
 				tr3.setDeal(deal);
-				tr3.setCurrencyTitle(deal.getBuyerWalletCurrency2().getCurrencyTitle());
 				tr3.setProcessed(false);				
-
-				TradeTransaction tr4 = new TradeTransaction();
-				tr4.setWallet(deal.getBuyerWalletCurrency1());
-				tr4.setSum(new BigDecimal(0).subtract(income));
-				tr4.setDeal(deal);
-				tr4.setCurrencyTitle(deal.getBuyerWalletCurrency1().getCurrencyTitle());
-				tr4.setProcessed(false);
 
 				// Тут надо зачислить на комиссионный кошелек сумму сбора за транзакцию.
 				
@@ -91,6 +116,8 @@ public class AccountingProcessorRunnnable implements Runnable {
 				mEm.persist(tr2);
 				mEm.persist(tr3);				
 				mEm.persist(tr4);
+				mEm.persist(tr5);				
+				mEm.persist(tr6);
 				trans.commit();
 
 				mLogger.debug("Processed DEAL {} in {}: user '{}' got {} {}, user '{}' got {} {}",
