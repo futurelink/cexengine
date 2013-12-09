@@ -52,23 +52,23 @@ public class TradeDeal implements Serializable {
 
 	@JoinColumn(name="sellerWalletCurrency1")	
 	private  TradeWallet mSellerWalletCurrency1;
-	public void setSellerWalletCurrency1(TradeWallet wallet) { mSellerWalletCurrency1 = wallet; }
-	public TradeWallet getSellerWalletCurrency1() { return mSellerWalletCurrency1; }
+	public void setSellerDebitWallet(TradeWallet wallet) { mSellerWalletCurrency1 = wallet; }
+	public TradeWallet getSellerDebitWallet() { return mSellerWalletCurrency1; }
 	
 	@JoinColumn(name="buyerWalletCurrency1")
 	private TradeWallet	 mBuyerWalletCurrency1;
-	public void setBuyerWalletCurrency1(TradeWallet wallet) { mBuyerWalletCurrency1 = wallet; }
-	public TradeWallet getBuyerWalletCurrency1() { return mBuyerWalletCurrency1; }
+	public void setBuyerDebitWallet(TradeWallet wallet) { mBuyerWalletCurrency1 = wallet; }
+	public TradeWallet getBuyerDebitWallet() { return mBuyerWalletCurrency1; }
 
 	@JoinColumn(name="sellerWalletCurrency2")	
 	private  TradeWallet mSellerWalletCurrency2;
-	public void setSellerWalletCurrency2(TradeWallet wallet) { mSellerWalletCurrency2 = wallet; }
-	public TradeWallet getSellerWalletCurrency2() { return mSellerWalletCurrency2; }
+	public void setSellerCreditWallet(TradeWallet wallet) { mSellerWalletCurrency2 = wallet; }
+	public TradeWallet getSellerCreditWallet() { return mSellerWalletCurrency2; }
 	
 	@JoinColumn(name="buyerWalletCurrency2")
 	private TradeWallet	 mBuyerWalletCurrency2;
-	public void setBuyerWalletCurrency2(TradeWallet wallet) { mBuyerWalletCurrency2 = wallet; }
-	public TradeWallet getBuyerWalletCurrency2() { return mBuyerWalletCurrency2; }
+	public void setBuyerCreditWallet(TradeWallet wallet) { mBuyerWalletCurrency2 = wallet; }
+	public TradeWallet getBuyerCreditWallet() { return mBuyerWalletCurrency2; }
 	
 	@Index
 	@JoinColumn(name="sellOrder", referencedColumnName = "id")
@@ -78,7 +78,7 @@ public class TradeDeal implements Serializable {
 	@Index
 	@JoinColumn(name="buyOrder", referencedColumnName = "id")
 	private TradeOrder mBuyOrder; 
-	public TradeOrder getbuyOrder() { return mBuyOrder; }	
+	public TradeOrder getBuyOrder() { return mBuyOrder; }	
 
 	@Index
 	@JoinColumn(name="tool")
@@ -125,13 +125,13 @@ public class TradeDeal implements Serializable {
 		deal.mPrice = buyOrder.getPrice();
 
 		deal.mBuyerAccount = buyOrder.getAccount();
-		deal.mBuyerWalletCurrency1 = buyOrder.getWalletCurrency1();
-		deal.mBuyerWalletCurrency2 = buyOrder.getWalletCurrency2();
+		deal.mBuyerWalletCurrency1 = buyOrder.getDebitWallet();
+		deal.mBuyerWalletCurrency2 = buyOrder.getCreditWallet();
 		deal.mBuyOrder = buyOrder;
 
 		deal.mSellerAccount = sellOrder.getAccount();
-		deal.mSellerWalletCurrency1 = sellOrder.getWalletCurrency1();
-		deal.mSellerWalletCurrency2 = sellOrder.getWalletCurrency2();
+		deal.mSellerWalletCurrency1 = sellOrder.getDebitWallet();
+		deal.mSellerWalletCurrency2 = sellOrder.getCreditWallet();
 		deal.mSellOrder = sellOrder;
 
 		deal.mAmount = amount;

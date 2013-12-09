@@ -38,7 +38,7 @@ public class TradeTransaction {
 	@Index
 	@JoinColumn(name="wallet")
 	private TradeWallet mWallet;
-	public void setWallet(TradeWallet wallet) { mWallet = wallet; } 
+	public void setWallet(TradeWallet wallet) { mWallet = wallet; mCurrencyTitle = wallet.getCurrencyTitle(); } 
 	
 	@Column(name="sum")
 	private BigDecimal mSum;
@@ -57,7 +57,6 @@ public class TradeTransaction {
 	
 	@Column(name="currencyTitle")
 	private String mCurrencyTitle;
-	public void setCurrencyTitle(String title) { mCurrencyTitle = title; }
 	
 	@Index
 	@Column(name="transactionType")

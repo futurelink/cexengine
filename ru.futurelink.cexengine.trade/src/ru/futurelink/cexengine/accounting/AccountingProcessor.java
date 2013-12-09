@@ -84,17 +84,15 @@ public class AccountingProcessor {
 				public void run() {
 					while(true) {
 						try {
-							if (mTools.size() > 0) {
-								// Получаем список необработаных сделок сгруппированный по инстирументу 
-								ConcurrentHashMap<TradeWallet, ConcurrentLinkedQueue<TradeTransaction>> transactions = getTransactionsToProcess();
+							// Получаем список необработаных сделок сгруппированный по инстирументу 
+							ConcurrentHashMap<TradeWallet, ConcurrentLinkedQueue<TradeTransaction>> transactions = getTransactionsToProcess();
 							
-								for (TradeWallet wallet: transactions.keySet()) {
-									// Пораждаем процесс обработки и начинаем все обрабатывать
-									if (!transactionProcessingThreadBlocked(wallet.getId())) {
-										runTransactionProcessingThread(transactions.get(wallet), wallet);									
-									} else {
-										mLogger.debug("Transaction thread is processing... skipping.");										
-									}
+							for (TradeWallet wallet: transactions.keySet()) {
+								// Пораждаем процесс обработки и начинаем все обрабатывать
+								if (!transactionProcessingThreadBlocked(wallet.getId())) {
+									runTransactionProcessingThread(transactions.get(wallet), wallet);									
+								} else {
+									mLogger.debug("Transaction thread is processing... skipping.");										
 								}
 							}
 

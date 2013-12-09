@@ -64,14 +64,14 @@ public class TradeOrder implements Serializable {
 	@Index
 	@JoinColumn(name="walletCurrency1")
 	private TradeWallet mWalletCurrency1;
-	public void setWalletCurrency1(TradeWallet wallet) { mWalletCurrency1 = wallet; }
-	public TradeWallet getWalletCurrency1() { return mWalletCurrency1; }
+	public void setDebitWallet(TradeWallet wallet) { mWalletCurrency1 = wallet; }
+	public TradeWallet getDebitWallet() { return mWalletCurrency1; }
 
 	@Index
 	@JoinColumn(name="walletCurrency2")
 	private TradeWallet mWalletCurrency2;
-	public void setWalletCurrency2(TradeWallet wallet) { mWalletCurrency2 = wallet; }
-	public TradeWallet getWalletCurrency2() { return mWalletCurrency2; }
+	public void setCreditWallet(TradeWallet wallet) { mWalletCurrency2 = wallet; }
+	public TradeWallet getCreditWallet() { return mWalletCurrency2; }
 	
 	@Column(name="amount")
 	private BigDecimal mAmount;
