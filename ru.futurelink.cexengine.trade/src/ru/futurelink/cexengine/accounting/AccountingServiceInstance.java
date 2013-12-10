@@ -29,11 +29,21 @@ public class AccountingServiceInstance implements IAccountingService {
 		mEntityManagerFactory = factory;
 		mEm = mEntityManagerFactory.createEntityManager();
 	}
+
+	@Override
+	public TradeWallet FindWallet(TradeAccount account, TradeCurrency currency) {
+		TypedQuery<TradeWallet> wq = mEm.createQuery("select w from Wallet w where w.mAccount = :account and w.mCurrency = :currency", TradeWallet.class);
+		wq.setParameter("account", account);
+		wq.setParameter("currency", currency);
+		if (!wq.getResultList().isEmpty()) {
+			return wq.getSingleResult();
+		} else {
+			return null;
+		}		
+	}
 	
 	@Override
-	public void PutIntoWallet(TradeCurrency currency, TradeAccount account,
-			BigDecimal sum) {
-		TradeWallet w = findWallet(currency, account);
+	public void PutIntoWallet(TradeWallet w,	BigDecimal sum) {
 		if (w != null) {
 			w.addSum(sum);		
 		
@@ -43,12 +53,8 @@ public class AccountingServiceInstance implements IAccountingService {
 		}
 	}
 
-	// На достаточность не проверяем, потому что можно уйти в минус
-	// это разрешается.
 	@Override
-	public void GetFromWallet(TradeCurrency currency, TradeAccount account,
-			BigDecimal sum) {
-		TradeWallet w = findWallet(currency, account);
+	public void GetFromWallet(TradeWallet w,	BigDecimal sum) {
 		if (w != null) {
 			w.subtractSum(sum);		
 
@@ -59,10 +65,8 @@ public class AccountingServiceInstance implements IAccountingService {
 	}
 
 	@Override
-	public void MoveBetweenWallets(TradeCurrency currency, TradeAccount sender,
-			TradeAccount reciever, BigDecimal sum) {
-		TradeWallet senderWallet = findWallet(currency, sender);
-		TradeWallet recvWallet = findWallet(currency, reciever);
+	public void MoveBetweenWallets(TradeCurrency currency, TradeWallet senderWallet,
+			TradeWallet recvWallet, BigDecimal sum) {
 		
 		// Если какой-то из кошельков - null, выходим.
 		if (senderWallet == null || recvWallet == null) {
@@ -83,9 +87,7 @@ public class AccountingServiceInstance implements IAccountingService {
 	}
 
 	@Override
-	public BigDecimal GetWalletBalance(TradeCurrency currency,
-			TradeAccount account) {
-		TradeWallet w = findWallet(currency, account);
+	public BigDecimal GetWalletBalance(TradeWallet w) {
 		if (w != null) {
 			return w.getBalance();
 		}
@@ -104,14 +106,4 @@ public class AccountingServiceInstance implements IAccountingService {
 		AccountingProcessor.getInstance().stopProcessing();
 	}
 
-	private TradeWallet findWallet(TradeCurrency currency, TradeAccount account) {
-		TypedQuery<TradeWallet> wq = mEm.createQuery("select w from Wallet w where w.mAccount = :account and w.mCurrency = :currency", TradeWallet.class);
-		wq.setParameter("account", account);
-		wq.setParameter("currency", currency);
-		if (!wq.getResultList().isEmpty()) {
-			return wq.getSingleResult();
-		} else {
-			return null;
-		}
-	}
 }

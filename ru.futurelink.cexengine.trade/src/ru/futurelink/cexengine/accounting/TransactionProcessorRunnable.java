@@ -34,7 +34,8 @@ public class TransactionProcessorRunnable implements Runnable {
 		
 		EntityTransaction 	trans = null;
 		TradeTransaction	transaction = null;
-		try {			
+		try {
+			boolean hasTransactions = !mTransactions.isEmpty();
 			mEm = mEntityManagerFactory.createEntityManager();
 			trans = mEm.getTransaction();
 			trans.begin();
@@ -43,7 +44,7 @@ public class TransactionProcessorRunnable implements Runnable {
 
 				// If there is nothing in queue - quit
 				if (transaction == null) break;
-
+				
 				// Calculate all transaction balance changes
 				if (transaction.getType() == TradeTransaction.TRANSACTION_BLOCK) {
 					mWallet.blockSum(transaction.getSum());
@@ -62,7 +63,8 @@ public class TransactionProcessorRunnable implements Runnable {
 			}
 			
 			// Merge wallet updates data and returns new managesd object of wallet.
-			mEm.merge(mWallet);
+			if (hasTransactions)
+				mEm.merge(mWallet);
 			trans.commit();
 		} catch (Exception e) {
 			e.printStackTrace();

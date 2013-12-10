@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 
 import ru.futurelink.cexengine.orm.TradeAccount;
 import ru.futurelink.cexengine.orm.TradeTool;
+import ru.futurelink.cexengine.orm.TradeWallet;
 
 /**
  * @author pavlov
@@ -23,18 +24,19 @@ public interface ITradeService {
 	/**
 	 * Разместить ордер.Размещение ордера должно быть реализовано в виде
 	 * атомарной операции.
+	 * @throws OrderException 
 	 */
-	public void PlaceOrder(TradeTool tool, Short type, BigDecimal amount, BigDecimal price, TradeAccount account);
+	public void PlaceOrder(TradeTool tool, Short type, BigDecimal amount, BigDecimal price, TradeAccount account) throws OrderException;
 	
 	/**
 	 * Отменить ордер. 
 	 */
-	public void CancelOrder(String orderId);
+	public void CancelOrder(String orderId) throws OrderException;
 	
 	/**
 	 * Изменить ордер.
 	 */
-	public void CorrectOrder(String orderId, BigDecimal amount, BigDecimal price);
+	public void CorrectOrder(String orderId, BigDecimal amount, BigDecimal price) throws OrderException;
 	
 	/**
 	 * Начать выполнение задач по осуществлению сделок.
@@ -54,4 +56,17 @@ public interface ITradeService {
 	 */
 	public TradeTool GetTool(String toolName);
 
+	/**
+	 * 
+	 * @param number
+	 * @return
+	 */
+	public TradeAccount GetAccount(String number);
+	
+	/**
+	 * 
+	 * @param account
+	 * @return
+	 */
+	public TradeWallet[] GetWallets(TradeAccount account);
 }
