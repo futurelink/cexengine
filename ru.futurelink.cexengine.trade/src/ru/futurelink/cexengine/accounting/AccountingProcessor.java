@@ -7,12 +7,10 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.LockModeType;
 import javax.persistence.TypedQuery;
 
 import org.slf4j.Logger;
@@ -20,7 +18,6 @@ import org.slf4j.LoggerFactory;
 
 import ru.futurelink.cexengine.orm.TradeDeal;
 import ru.futurelink.cexengine.orm.TradeTool;
-import ru.futurelink.cexengine.orm.TradeTransaction;
 import ru.futurelink.cexengine.orm.TradeWallet;
 
 /**
@@ -83,31 +80,21 @@ public class AccountingProcessor {
 			}
 			
 			mTransactionProcessorThread = new Thread() {
+				private volatile ArrayList<String> wallets;
 				@Override
 				public void run() {
 					while(true) {
 						try {
-							// Получаем список необработаных сделок сгруппированный по инстирументу 
-							//ConcurrentHashMap<TradeWallet, ConcurrentLinkedQueue<TradeTransaction>> transactions = getTransactionsToProcess();
-							ArrayList<TradeWallet> wallets = getWalletsToProcess();
+							wallets = getWalletsToProcess();
 							
-							for (TradeWallet wallet : wallets) {
-								if (!transactionProcessingThreadBlocked(wallet.getId())) {
-									mLogger.info("Running transaction processing for wallet {}", wallet.getId());
+							for (String wallet : wallets) {
+								if (!transactionProcessingThreadBlocked(wallet)) {
+									mLogger.debug("Running transaction processing for wallet {}", wallet);
 									runWalletProcessingThread(wallet);									
 								} else {
-									mLogger.info("Transaction thread is processing... skipping.");										
+									mLogger.debug("Transaction thread is processing... skipping.");										
 								}							
 							}
-							
-							/*for (TradeWallet wallet: transactions.keySet()) {
-								// Пораждаем процесс обработки и начинаем все обрабатывать
-								if (!transactionProcessingThreadBlocked(wallet.getId())) {
-									runTransactionProcessingThread(transactions.get(wallet), wallet);									
-								} else {
-									mLogger.debug("Transaction thread is processing... skipping.");										
-								}
-							}*/
 
 							sleep(SLEEPTIME);
 						} catch (InterruptedException e) { 
@@ -214,35 +201,35 @@ public class AccountingProcessor {
 	 * @param deals a queue of deals to process
 	 * @param tool a tool of that deals
 	 */
-	private synchronized void runWalletProcessingThread(TradeWallet wallet) {
+	private synchronized void runWalletProcessingThread(String wallet) {
 		TransactionProcessorListener mExecutionListener = new TransactionProcessorListener() {
 			@Override
-			public boolean QueueExecuteStarted(TradeWallet wallet) {
-				transactionProcessingThreadBlock(wallet.getId(), true);
-				mLogger.debug("Transaction processing thread on wallet = {} started...", wallet.getId());
+			public boolean QueueExecuteStarted(String walletId) {
+				transactionProcessingThreadBlock(walletId, true);
+				mLogger.debug("Transaction processing thread on wallet = {} started...", walletId);
 				return true;
 			}
 			
 			@Override
-			public void QueueExecuteInterrupted(TradeWallet wallet) {		
-				transactionProcessingThreadBlock(wallet.getId(), false);
-				mLogger.info("Transaction processing thread interrupted on tool = {}...", wallet.getId());
+			public void QueueExecuteInterrupted(String walletId) {		
+				transactionProcessingThreadBlock(walletId, false);
+				mLogger.info("Transaction processing thread interrupted on wallet = {}...", walletId);
 			}
 
 			@Override
-			public void QueueExecuteComplete(TradeWallet wallet) {
-				transactionProcessingThreadBlock(wallet.getId(), false);
-				mLogger.debug("Transaction processing on tool = {} completed...", wallet.getId());
+			public void QueueExecuteComplete(String walletId) {
+				transactionProcessingThreadBlock(walletId, false);
+				mLogger.debug("Transaction processing on wallet = {} completed...", walletId);
 			}
 		};
 
-		mLogger.debug("Starting transactions processing on wallet '{}':", wallet.getId());
+		mLogger.debug("Starting transactions processing on wallet '{}':", wallet);
 
 		// Create execution thread
 		TransactionProcessorRunnable runnable = new TransactionProcessorRunnable();
 		runnable.setLogger(mLogger);
 		runnable.setEntityManagerFactory(mEntityManagerFactory);
-		runnable.setWallet(wallet);
+		runnable.setWalletId(wallet);
 		runnable.setExecutionListener(mExecutionListener);
 
 		// Запускаем обработку ордеров
@@ -302,50 +289,24 @@ public class AccountingProcessor {
 		return false;
 	}
 	
-	private synchronized ArrayList<TradeWallet> getWalletsToProcess() {
-		ArrayList<TradeWallet> wallets = new ArrayList<TradeWallet>();
+	/**
+	 * Select wallets having unprocessed transactions.
+	 * 
+	 * @return
+	 */
+	private synchronized ArrayList<String> getWalletsToProcess() {
+		ArrayList<String> wallets = new ArrayList<String>();
 
 		// Select all wallets having unprocessed transactions
-		TypedQuery<TradeWallet> tq = mEm.createQuery("select distinct(trans.mWallet) from TradeTransaction trans where "
-				+ "trans.mProcessed = 0 group by trans.mWallet", TradeWallet.class);
-		for (TradeWallet wallet : tq.getResultList()) {
+		TypedQuery<String> tq = mEm.createQuery("select trans.mWallet.mId from TradeTransaction trans where "
+				+ "trans.mProcessed = 0 group by trans.mWallet", String.class);
+		for (String wallet : tq.getResultList()) {
 			// Check whether wallet processing is blocked
-			if (!transactionProcessingThreadBlocked(wallet.getId())) {
+			if (!transactionProcessingThreadBlocked(wallet)) {
 				wallets.add(wallet);
 			}
 		}
 		return wallets;
-	}
-	
-	/**
-	 * Select unprocessed transactions separated by wallet into queues to process.
-	 * 
-	 * @return
-	 */
-	private synchronized ConcurrentHashMap<TradeWallet, ConcurrentLinkedQueue<TradeTransaction>> getTransactionsToProcess() {
-		ConcurrentHashMap<TradeWallet, ConcurrentLinkedQueue<TradeTransaction>> transactions = 
-				new ConcurrentHashMap<TradeWallet, ConcurrentLinkedQueue<TradeTransaction>>();
-
-		// Select all wallets having unprocessed transactions
-		TypedQuery<TradeWallet> tq = mEm.createQuery("select trans.mWallet from TradeTransaction trans where "
-				+ "trans.mProcessed = 0 group by trans.mWallet having count(trans) > 0", TradeWallet.class);
-		if (!tq.getResultList().isEmpty()) {
-			for (TradeWallet wallet : tq.getResultList()) {
-				// Check whether wallet processing is blocked
-				if (transactionProcessingThreadBlocked(wallet.getId())) continue;
-				if (transactions.get(wallet) == null)
-					transactions.put(wallet, new ConcurrentLinkedQueue<TradeTransaction>());
-
-				TypedQuery<TradeTransaction> dq = mEm.createQuery("select trans from TradeTransaction trans where "
-						+ "trans.mWallet = :wallet and trans.mProcessed = 0 order by trans.mId asc", TradeTransaction.class);
-				dq.setParameter("wallet", wallet);
-				
-				// Assume result list is not empty, if empty - that's error
-				transactions.get(wallet).addAll(dq.setMaxResults(300).getResultList());
-			}
-		}
-
-		return transactions;
 	}
 	
 	/**
