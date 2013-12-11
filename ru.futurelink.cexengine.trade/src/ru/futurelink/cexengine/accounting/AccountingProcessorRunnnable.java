@@ -9,11 +9,11 @@ import java.util.concurrent.BlockingQueue;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
+import javax.persistence.LockModeType;
 
 import org.slf4j.Logger;
 
 import ru.futurelink.cexengine.orm.TradeDeal;
-import ru.futurelink.cexengine.orm.TradeTool;
 import ru.futurelink.cexengine.orm.TradeTransaction;
 
 /**

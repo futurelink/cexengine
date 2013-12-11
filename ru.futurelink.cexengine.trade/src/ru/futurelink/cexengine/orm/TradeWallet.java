@@ -11,6 +11,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.Version;
 
 import org.eclipse.persistence.annotations.Index;
 
@@ -36,6 +37,8 @@ public class TradeWallet implements Serializable {
 	private		String mId;	
 	public 		String getId() {	return mId;	}
 	public		void setId(String id) { mId = id; }
+	
+	//@Version int version;
 	
 	@Index
 	@JoinColumn(name="account")

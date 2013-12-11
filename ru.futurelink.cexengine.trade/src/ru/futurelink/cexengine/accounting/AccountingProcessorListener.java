@@ -5,8 +5,6 @@ package ru.futurelink.cexengine.accounting;
 
 import java.math.BigDecimal;
 
-import ru.futurelink.cexengine.orm.TradeTool;
-
 /**
  * @author pavlov
  *
