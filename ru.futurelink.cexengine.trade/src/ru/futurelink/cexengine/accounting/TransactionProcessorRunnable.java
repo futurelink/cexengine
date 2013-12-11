@@ -29,58 +29,57 @@ public class TransactionProcessorRunnable implements Runnable {
 
 	@Override
 	public void run() {
-		if (mTransactions == null) return;
 		if (mListener != null) mListener.QueueExecuteStarted(mWallet);
 		
-		EntityTransaction 	trans = null;
-		TradeTransaction	transaction = null;
-		try {
-			boolean hasTransactions = !mTransactions.isEmpty();
-			mEm = mEntityManagerFactory.createEntityManager();
-			trans = mEm.getTransaction();
-			trans.begin();
-			while ((mTransactions.size() > 0)) {
-				transaction = mTransactions.poll();	// Берем из очереди
+		if ((mTransactions != null) && !mTransactions.isEmpty()) { 			
+			EntityTransaction 	trans = null;
+			TradeTransaction	transaction = null;
+			try {
+				mEm = mEntityManagerFactory.createEntityManager();
+				trans = mEm.getTransaction();
+				trans.begin();
+				while ((mTransactions.size() > 0)) {
+					transaction = mTransactions.poll();	// Берем из очереди
 
-				// If there is nothing in queue - quit
-				if (transaction == null) break;
+					// If there is nothing in queue - quit
+					if (transaction == null) break;
 				
-				// Calculate all transaction balance changes
-				if (transaction.getType() == TradeTransaction.TRANSACTION_BLOCK) {
-					mWallet.blockSum(transaction.getSum());
-					transaction.setProcessed(true);
-				} else if (transaction.getType() == TradeTransaction.TRANSACTION_UNBLOCK) {
-					mWallet.unblockSum(transaction.getSum());
-					transaction.setProcessed(true);
-				} else if (transaction.getType() == TradeTransaction.TRANSACTION_MOVE) {
-					// Transaction sum may be negative or positive, so just add sum to wallet
-					mWallet.addSum(transaction.getSum());
-					transaction.setProcessed(true);
+					// Calculate all transaction balance changes
+					if (transaction.getType() == TradeTransaction.TRANSACTION_BLOCK) {
+						mWallet.blockSum(transaction.getSum());
+						transaction.setProcessed(true);
+					} else if (transaction.getType() == TradeTransaction.TRANSACTION_UNBLOCK) {
+						mWallet.unblockSum(transaction.getSum());
+						transaction.setProcessed(true);
+					} else if (transaction.getType() == TradeTransaction.TRANSACTION_MOVE) {
+						// Transaction sum may be negative or positive, so just add sum to wallet
+						mWallet.addSum(transaction.getSum());
+						transaction.setProcessed(true);
+					}
+
+					mEm.merge(transaction);				
+					mLogger.debug("Transaction {} processed", transaction.getId());
+				}
+			
+				// Merge wallet updates data and returns new managesd object of wallet.
+				mEm.merge(mWallet);
+				trans.commit();
+			} catch (Exception e) {
+				e.printStackTrace();
+
+				// Ooops!...
+				if (trans != null && trans.isActive()) {
+					trans.rollback();
 				}
 
-				mEm.merge(transaction);				
-				mLogger.debug("Transaction {} processed", transaction.getId());
-			}
+				// Clear queue, free memory,
+				// everything is moving to next iteration...
+				mTransactions.clear();
+
+				if (mListener != null) mListener.QueueExecuteInterrupted(mWallet);
 			
-			// Merge wallet updates data and returns new managesd object of wallet.
-			if (hasTransactions)
-				mEm.merge(mWallet);
-			trans.commit();
-		} catch (Exception e) {
-			e.printStackTrace();
-
-			// Ooops!...
-			if (trans != null && trans.isActive()) {
-				trans.rollback();
+				return;			
 			}
-
-			// Clear queue, free memory,
-			// everything is moving to next iteration...
-			mTransactions.clear();
-
-			if (mListener != null) mListener.QueueExecuteInterrupted(mWallet);
-			
-			return;			
 		}
 		
 		if (mListener != null) mListener.QueueExecuteComplete(mWallet);

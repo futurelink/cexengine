@@ -50,7 +50,7 @@ public class TradeDeal implements Serializable {
 	private TradeAccount mBuyerAccount;
 	public TradeAccount getBuyerAccount() { return mBuyerAccount; }
 
-	@JoinColumn(name="sellerWalletCurrency1")	
+	@JoinColumn(name="sellerWalletCurrency1")
 	private  TradeWallet mSellerWalletCurrency1;
 	public void setSellerDebitWallet(TradeWallet wallet) { mSellerWalletCurrency1 = wallet; }
 	public TradeWallet getSellerDebitWallet() { return mSellerWalletCurrency1; }
@@ -60,7 +60,7 @@ public class TradeDeal implements Serializable {
 	public void setBuyerDebitWallet(TradeWallet wallet) { mBuyerWalletCurrency1 = wallet; }
 	public TradeWallet getBuyerDebitWallet() { return mBuyerWalletCurrency1; }
 
-	@JoinColumn(name="sellerWalletCurrency2")	
+	@JoinColumn(name="sellerWalletCurrency2")
 	private  TradeWallet mSellerWalletCurrency2;
 	public void setSellerCreditWallet(TradeWallet wallet) { mSellerWalletCurrency2 = wallet; }
 	public TradeWallet getSellerCreditWallet() { return mSellerWalletCurrency2; }
@@ -90,10 +90,12 @@ public class TradeDeal implements Serializable {
 	private BigDecimal mAmount;
 	public BigDecimal getAmount() { return mAmount; }
 
+	@Index
 	@Column(name="price")
 	private BigDecimal mPrice;
 	public void setPrice(BigDecimal price) { mPrice = price; }
-	
+	public BigDecimal getPrice() { return mPrice; }
+
 	@Index
 	@Column(name="executionTime")
 	@Temporal(TemporalType.TIMESTAMP)
