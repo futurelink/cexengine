@@ -10,7 +10,7 @@ import ru.futurelink.cexengine.orm.TradeWallet;
  *
  */
 public interface TransactionProcessorListener {
-	public void QueueExecuteStarted(TradeWallet wallet);
-	public void QueueExecuteComplete(TradeWallet wallet);
-	public void QueueExecuteInterrupted(TradeWallet wallet);
+	public boolean QueueExecuteStarted(String wallet);
+	public void QueueExecuteComplete(String  wallet);
+	public void QueueExecuteInterrupted(String wallet);
 }

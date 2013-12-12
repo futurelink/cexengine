@@ -5,7 +5,8 @@ Bundle-SymbolicName: ru.futurelink.cexengine.trade;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-ClassPath: .
 Bundle-Activator: ru.futurelink.cexengine.Activator
-Export-Package: ru.futurelink.cexengine.orm,
+Export-Package: ru.futurelink.cexengine.accounting,
+ ru.futurelink.cexengine.orm,
  ru.futurelink.cexengine.trade
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 JPA-PersistenceUnits: cex
@@ -15,9 +16,12 @@ Import-Package: javax.persistence;version="2.0.4",
  org.eclipse.persistence;version="2.4.0",
  org.eclipse.persistence.annotations;version="2.4.0",
  org.eclipse.persistence.config;version="2.4.0",
+ org.eclipse.persistence.exceptions;version="2.4.0",
  org.eclipse.persistence.internal.databaseaccess;version="2.4.0",
  org.eclipse.persistence.internal.sessions;version="2.4.0",
+ org.eclipse.persistence.jpa;version="2.4.0",
  org.eclipse.persistence.logging;version="2.4.0",
+ org.eclipse.persistence.queries;version="2.4.0",
  org.eclipse.persistence.sequencing;version="2.4.0",
  org.eclipse.persistence.sessions;version="2.4.0",
  org.osgi.framework;version="1.7.0",

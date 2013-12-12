@@ -11,6 +11,7 @@ import javax.persistence.TypedQuery;
 
 import ru.futurelink.cexengine.orm.TradeAccount;
 import ru.futurelink.cexengine.orm.TradeTool;
+import ru.futurelink.cexengine.orm.TradeWallet;
 
 /**
  * @author pavlov
@@ -33,19 +34,19 @@ public class TradeServiceInstance implements ITradeService {
 	}
 
 	@Override
-	public void PlaceOrder(TradeTool tool, Short type, BigDecimal amount, BigDecimal price, TradeAccount account) {
+	public void PlaceOrder(TradeTool tool, Short type, BigDecimal amount, BigDecimal price, TradeAccount account) throws OrderException {
 		if (mOrderer != null)
 			mOrderer.get().placeOrder(tool, type, price, amount, account);
 	}
 
 	@Override
-	public void CancelOrder(String orderId) {
+	public void CancelOrder(String orderId) throws OrderException {
 		if (mOrderer != null)
 			mOrderer.get().modifyOrder(orderId, null, null, ITradeService.CANCELLED);
 	}
 
 	@Override
-	public void CorrectOrder(String orderId, BigDecimal amount, BigDecimal price) {
+	public void CorrectOrder(String orderId, BigDecimal amount, BigDecimal price) throws OrderException {
 		if (mOrderer != null)
 			mOrderer.get().modifyOrder(orderId, amount, price, ITradeService.ACTIVE);
 	}
@@ -73,6 +74,7 @@ public class TradeServiceInstance implements ITradeService {
 		return null;
 	}
 
+	@Override
 	public TradeAccount GetAccount(String number) {
 		TypedQuery<TradeAccount> accQuery = mEm.get().createQuery(
 				"select a from TradeAccount a where a.mNumber = :accNumber", TradeAccount.class);
@@ -82,6 +84,25 @@ public class TradeServiceInstance implements ITradeService {
 			System.out.println("Got account by number "+number+": "+acc.getId().toString());
 			return acc;
 		}
+		return null;
+	}
+
+	@Override
+	public TradeWallet[] GetWallets(TradeAccount account) {
+		TradeWallet[] wallets;
+		TypedQuery<TradeWallet> wQuery = mEm.get().createQuery(
+				"select w from TradeWallet w where w.mAccount = :account", TradeWallet.class);
+		wQuery.setParameter("account", account);
+		if(!wQuery.getResultList().isEmpty()) {
+			wallets = new TradeWallet[wQuery.getResultList().size()];
+			int i = 0;
+			for (TradeWallet w : wQuery.getResultList()) {
+				wallets[i] = w;
+				i++;
+			}
+			return wallets;
+		}
+
 		return null;
 	}
 }

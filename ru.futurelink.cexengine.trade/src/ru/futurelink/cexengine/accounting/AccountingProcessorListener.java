@@ -3,14 +3,14 @@
  */
 package ru.futurelink.cexengine.accounting;
 
-import ru.futurelink.cexengine.orm.TradeTool;
+import java.math.BigDecimal;
 
 /**
  * @author pavlov
  *
  */
 public interface AccountingProcessorListener {
-	public void QueueExecuteStarted(TradeTool tool);
-	public void QueueExecuteComplete(TradeTool tool);
-	public void QueueExecuteInterrupted(TradeTool tool);
+	public void QueueExecuteStarted(BigDecimal price);
+	public void QueueExecuteComplete(BigDecimal price);
+	public void QueueExecuteInterrupted(BigDecimal price);
 }

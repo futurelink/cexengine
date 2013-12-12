@@ -3,13 +3,22 @@
  */
 package ru.futurelink.cexengine.accounting;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.Iterator;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
+import javax.persistence.RollbackException;
+import javax.persistence.TypedQuery;
 
+import org.eclipse.persistence.config.QueryHints;
+import org.eclipse.persistence.config.ResultSetType;
+import org.eclipse.persistence.exceptions.DatabaseException;
+import org.eclipse.persistence.jpa.JpaQuery;
+import org.eclipse.persistence.queries.Cursor;
 import org.slf4j.Logger;
+
+import com.mysql.jdbc.exceptions.MySQLTransactionRollbackException;
 
 import ru.futurelink.cexengine.orm.TradeTransaction;
 import ru.futurelink.cexengine.orm.TradeWallet;
@@ -24,46 +33,101 @@ public class TransactionProcessorRunnable implements Runnable {
 	private EntityManager				mEm;
 	private Logger						mLogger;
 	private TradeWallet					mWallet;
-	private ConcurrentLinkedQueue<TradeTransaction> mTransactions;
+	private String						mWalletId;
 	private TransactionProcessorListener mListener;
 
+	static final int MAX_TRANSACTIONS = 100;
+	
 	@Override
 	public void run() {
-		if (mTransactions == null) return;
-		if (mListener != null) mListener.QueueExecuteStarted(mWallet);
+		if (mListener != null) {
+			if (!mListener.QueueExecuteStarted(mWalletId)) return;
+		}
 		
-		EntityTransaction 	trans = null;
-		TradeTransaction	transaction = null;
-		try {			
-			mEm = mEntityManagerFactory.createEntityManager();
-			trans = mEm.getTransaction();
-			trans.begin();
-			while ((mTransactions.size() > 0)) {
-				transaction = mTransactions.poll();	// Берем из очереди
+		mEm = mEntityManagerFactory.createEntityManager();
+		mWallet = mEm.find(TradeWallet.class, mWalletId);
+		
+		mLogger.debug("Getting transaction for wallet: {}", mWallet.getId());
 
-				// If there is nothing in queue - quit
-				if (transaction == null) break;
+		TypedQuery<TradeTransaction> dq = mEm.createQuery(
+				"select trans from TradeTransaction trans where "
+				+ "trans.mWallet = :wallet and trans.mProcessed = 0 "
+				+ "order by trans.mId asc", TradeTransaction.class);
+		dq.setParameter("wallet", mWallet);
 
-				// Calculate all transaction balance changes
-				if (transaction.getType() == TradeTransaction.TRANSACTION_BLOCK) {
-					mWallet.blockSum(transaction.getSum());
-					transaction.setProcessed(true);
-				} else if (transaction.getType() == TradeTransaction.TRANSACTION_UNBLOCK) {
-					mWallet.unblockSum(transaction.getSum());
-					transaction.setProcessed(true);
-				} else if (transaction.getType() == TradeTransaction.TRANSACTION_MOVE) {
-					// Transaction sum may be negative or positive, so just add sum to wallet
-					mWallet.addSum(transaction.getSum());
-					transaction.setProcessed(true);
-				}
-
-				mEm.merge(transaction);				
-				mLogger.debug("Transaction {} processed", transaction.getId());
+		// Iterate through result list
+		JpaQuery<TradeTransaction> jQuery = (JpaQuery<TradeTransaction>) dq;
+	    jQuery.setHint(QueryHints.RESULT_SET_TYPE, ResultSetType.ForwardOnly)
+	       .setHint(QueryHints.SCROLLABLE_CURSOR, true);
+	    final Cursor cursor = jQuery.getResultCursor();
+	    Iterable<TradeTransaction> iterator = new Iterable<TradeTransaction>() {			
+			@SuppressWarnings("unchecked")
+			@Override
+			public Iterator<TradeTransaction> iterator() {
+				return cursor;
 			}
+		};
+		
+		mLogger.debug("Processing transaction for wallet: {}", mWallet.getId());
+				
+		int 				counter = 0;
+		EntityTransaction 	trans = null;
+		try {
+			int retries = 0;
+			int errCode = -1;
+			while ((retries < 3) && (errCode != 0)) {
+				try {
+					trans = mEm.getTransaction();
+					trans.begin();
+
+					for (TradeTransaction transaction : iterator) {
+						// If there is nothing in queue - quit
+						if (transaction == null) break;
+
+						// Calculate all transaction balance changes
+						if (transaction.getType() == TradeTransaction.TRANSACTION_BLOCK) {
+							mWallet.blockSum(transaction.getSum());
+							transaction.setProcessed(true);
+						} else if (transaction.getType() == TradeTransaction.TRANSACTION_UNBLOCK) {
+							mWallet.unblockSum(transaction.getSum());
+							transaction.setProcessed(true);
+						} else if (transaction.getType() == TradeTransaction.TRANSACTION_MOVE) {
+							// Transaction sum may be negative or positive, so just add sum to wallet
+							mWallet.addSum(transaction.getSum());
+							transaction.setProcessed(true);
+						}
+
+						mEm.merge(transaction);				
+
+						counter++;					
+						if (counter > MAX_TRANSACTIONS) break;
+					}
 			
-			// Merge wallet updates data and returns new managesd object of wallet.
-			mEm.merge(mWallet);
-			trans.commit();
+					// Merge wallet updates data and returns new managesd object of wallet.
+					mEm.persist(mWallet);
+
+					trans.commit();
+					errCode = 0;
+				} catch(RollbackException e) {
+					// MySQL INNODB deadlock found...
+					Throwable cause = e.getCause();
+					if (cause instanceof DatabaseException) {
+						errCode = ((DatabaseException)cause).getDatabaseErrorCode();
+						if (errCode == 1213) {
+							mLogger.warn("INNODB detected deadlock. Retrying transaction.");
+							Thread.sleep(10);
+						}
+						retries++;
+					} else {
+						// DO NOT REPEAT!
+						retries = 3;
+					}
+				}
+			}
+
+			((Cursor)iterator.iterator()).close();
+				
+			mLogger.debug("Processed transaction for wallet ({} transactions processed): {}", counter, mWallet.getId());
 		} catch (Exception e) {
 			e.printStackTrace();
 
@@ -72,16 +136,14 @@ public class TransactionProcessorRunnable implements Runnable {
 				trans.rollback();
 			}
 
-			// Clear queue, free memory,
-			// everything is moving to next iteration...
-			mTransactions.clear();
-
-			if (mListener != null) mListener.QueueExecuteInterrupted(mWallet);
+			if (mListener != null) mListener.QueueExecuteInterrupted(mWalletId);
 			
 			return;			
 		}
 		
-		if (mListener != null) mListener.QueueExecuteComplete(mWallet);
+		mEm.close();
+		
+		if (mListener != null) mListener.QueueExecuteComplete(mWalletId);
 	}
 
 	/**
@@ -99,13 +161,10 @@ public class TransactionProcessorRunnable implements Runnable {
 		mWallet = wallet;
 	}
 
-	/**
-	 * @param trans
-	 */
-	public void setTransactions(ConcurrentLinkedQueue<TradeTransaction> trans) {
-		mTransactions = trans;
+	public void setWalletId(String walletId) {
+		mWalletId = walletId;
 	}
-
+	
 	/**
 	 * @param listener
 	 */

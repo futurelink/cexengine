@@ -13,7 +13,6 @@ import javax.persistence.EntityTransaction;
 import org.slf4j.Logger;
 
 import ru.futurelink.cexengine.orm.TradeDeal;
-import ru.futurelink.cexengine.orm.TradeTool;
 import ru.futurelink.cexengine.orm.TradeTransaction;
 
 /**
@@ -25,14 +24,14 @@ public class AccountingProcessorRunnnable implements Runnable {
 	private EntityManagerFactory 		mEntityManagerFactory;
 	private EntityManager				mEm;
 	private Logger						mLogger;
-	private TradeTool					mTool;
+	private BigDecimal					mPrice;
 	private BlockingQueue<TradeDeal>	mDeals;
 	private AccountingProcessorListener mListener;
 	
 	@Override
 	public void run() {
 		if (mDeals == null) return;
-		if (mListener != null) mListener.QueueExecuteStarted(mTool);
+		if (mListener != null) mListener.QueueExecuteStarted(mPrice);
 		
 		EntityTransaction 	trans = null;
 		TradeDeal			deal = null;
@@ -143,12 +142,12 @@ public class AccountingProcessorRunnnable implements Runnable {
 			// Все переносится на следующую итерацию.
 			mDeals.clear();
 
-			if (mListener != null) mListener.QueueExecuteInterrupted(mTool);
+			if (mListener != null) mListener.QueueExecuteInterrupted(mPrice);
 			
 			return;
 		}
 		
-		if (mListener != null) mListener.QueueExecuteComplete(mTool);
+		if (mListener != null) mListener.QueueExecuteComplete(mPrice);
 	}
 
 	/**
@@ -160,10 +159,10 @@ public class AccountingProcessorRunnnable implements Runnable {
 	}
 
 	/**
-	 * @param tool
+	 * @param price
 	 */
-	public void setTool(TradeTool tool) {
-		mTool = tool;
+	public void setPrice(BigDecimal price) {
+		mPrice = price;
 	}
 
 	/**
