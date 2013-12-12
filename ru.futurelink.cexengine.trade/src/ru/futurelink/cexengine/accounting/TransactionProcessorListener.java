@@ -3,8 +3,6 @@
  */
 package ru.futurelink.cexengine.accounting;
 
-import ru.futurelink.cexengine.orm.TradeWallet;
-
 /**
  * @author pavlov
  *
