@@ -18,8 +18,6 @@ import org.eclipse.persistence.jpa.JpaQuery;
 import org.eclipse.persistence.queries.Cursor;
 import org.slf4j.Logger;
 
-import com.mysql.jdbc.exceptions.MySQLTransactionRollbackException;
-
 import ru.futurelink.cexengine.orm.TradeTransaction;
 import ru.futurelink.cexengine.orm.TradeWallet;
 
@@ -97,12 +95,12 @@ public class TransactionProcessorRunnable implements Runnable {
 							transaction.setProcessed(true);
 						}
 
-						mEm.merge(transaction);				
+						mEm.merge(transaction);	
 
-						counter++;					
+						counter++;
 						if (counter > MAX_TRANSACTIONS) break;
 					}
-			
+
 					// Merge wallet updates data and returns new managesd object of wallet.
 					mEm.persist(mWallet);
 
@@ -126,7 +124,7 @@ public class TransactionProcessorRunnable implements Runnable {
 			}
 
 			((Cursor)iterator.iterator()).close();
-				
+
 			mLogger.debug("Processed transaction for wallet ({} transactions processed): {}", counter, mWallet.getId());
 		} catch (Exception e) {
 			e.printStackTrace();

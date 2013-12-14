@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 
 import ru.futurelink.cexengine.orm.TradeDeal;
 import ru.futurelink.cexengine.orm.TradeTool;
-import ru.futurelink.cexengine.orm.TradeWallet;
 
 /**
  * Процессор сделок по ордерам. Синглтон.
@@ -192,7 +191,7 @@ public class AccountingProcessor {
 
 		// Запускаем обработку ордеров
 		Thread thread = new Thread(runnable);
-		thread.start();		
+		thread.start();	
 	}
 
 	/**
@@ -234,7 +233,7 @@ public class AccountingProcessor {
 
 		// Запускаем обработку ордеров
 		Thread thread = new Thread(runnable);
-		thread.start();		
+		thread.start();	
 	}
 	
 	/**

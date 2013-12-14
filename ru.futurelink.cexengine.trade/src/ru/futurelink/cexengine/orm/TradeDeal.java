@@ -107,6 +107,18 @@ public class TradeDeal implements Serializable {
 	public void setProcessed(Boolean processed) { mProcessed = processed; }
 	public Boolean getProcessed() { return mProcessed; }  
 
+	@Index
+	@Column(name="sellProcessed")
+	private Boolean mSellProcessed;
+	public void setSellProcessed(Boolean processed) { mSellProcessed = processed; if (mSellProcessed&&getBuyProcessed()) mProcessed = true; else mProcessed = false; }
+	public Boolean getSellProcessed() { if (mSellProcessed == null) mSellProcessed = false; return mSellProcessed; }
+
+	@Index
+	@Column(name="buyProcessed")
+	private Boolean mBuyProcessed;
+	public void setBuyProcessed(Boolean processed) { mBuyProcessed = processed; if (mBuyProcessed&&getSellProcessed()) mProcessed = true; else mProcessed = false; }
+	public Boolean getBuyProcessed()  { if (mBuyProcessed == null) mBuyProcessed = false; return mBuyProcessed; }
+	
 	@Column(name="processTime")
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date mProcessTime;

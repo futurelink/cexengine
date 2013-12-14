@@ -6,6 +6,7 @@ Bundle-Version: 1.0.0.qualifier
 Bundle-ClassPath: .
 Bundle-Activator: ru.futurelink.cexengine.Activator
 Export-Package: ru.futurelink.cexengine.accounting,
+ ru.futurelink.cexengine.consistency,
  ru.futurelink.cexengine.orm,
  ru.futurelink.cexengine.trade
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7

@@ -5,15 +5,15 @@ package ru.futurelink.cexengine.accounting;
 
 import javax.persistence.EntityManagerFactory;
 
+import ru.futurelink.cexengine.CEXService;
+
 /**
  * @author pavlov
  *
  */
-public class AccountingService {
-	private EntityManagerFactory mEntityManagerFactory;
-
+public class AccountingService extends CEXService {
 	public AccountingService(EntityManagerFactory entityManagerFactory) {
-		mEntityManagerFactory = entityManagerFactory;
+		super(entityManagerFactory);
 	}
 
 	public AccountingServiceInstance CreateInstance() {
