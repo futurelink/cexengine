@@ -9,6 +9,8 @@ import org.osgi.util.tracker.ServiceTracker;
 
 import ru.futurelink.cexengine.accounting.AccountingService;
 import ru.futurelink.cexengine.accounting.IAccountingService;
+import ru.futurelink.cexengine.consistency.ConsistencyService;
+import ru.futurelink.cexengine.consistency.ConsistencyServiceInstance;
 import ru.futurelink.cexengine.orm.TradeAccount;
 import ru.futurelink.cexengine.orm.TradeWallet;
 import ru.futurelink.cexengine.trade.ITradeService;
@@ -28,6 +30,7 @@ public class Activator implements BundleActivator {
 
 	private TradeService		mTradeService;
 	private AccountingService 	mAccountingService;
+	private ConsistencyService mConsistencyService;
 
 	private ServiceTracker<Object, Object> mServiceTracker;
 
@@ -48,6 +51,18 @@ public class Activator implements BundleActivator {
 		mAccountingService = (AccountingService) mServiceTracker.getService();
 		mServiceTracker.close();
 	
+		// Consistency checker service
+		mServiceTracker = new ServiceTracker<Object, Object>(context, ConsistencyService.class.getName(), null);
+		mServiceTracker.open();
+		mConsistencyService = (ConsistencyService) mServiceTracker.getService();
+		mServiceTracker.close();
+
+		if (mConsistencyService != null) {
+			ConsistencyServiceInstance instance = mConsistencyService.CreateInstance();
+			if (!instance.RunTest())
+				return;
+		}
+	
 		if ((mTradeService != null) && (mAccountingService != null)) {			
 			ITradeService instance = mTradeService.CreateInstance();
 			IAccountingService accountingInstance = mAccountingService.CreateInstance(); 
@@ -62,10 +77,10 @@ public class Activator implements BundleActivator {
 				accounts.add(acc);
 
 				// Зачислим на все кошельки всех акков по 1000000 единиц валюты
-				TradeWallet wallets[] = instance.GetWallets(acc);
+				/*TradeWallet wallets[] = instance.GetWallets(acc);
 				for (TradeWallet w : wallets) {
 					accountingInstance.PutIntoWallet(w, new BigDecimal(1000000));
-				}
+				}*/
 			}
 			
 		    // Начинаем тест, порождаем 500 параллельных потоков,
@@ -82,5 +97,12 @@ public class Activator implements BundleActivator {
 
 	public void stop(BundleContext context) throws Exception {
 		System.out.println("Stopping test for cexengine...");
+	}
+	
+	/**
+	 * Test state of financial data in database.
+	 */
+	public void testDataState() {
+		
 	}
 }

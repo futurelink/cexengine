@@ -10,6 +10,7 @@ import org.osgi.framework.ServiceRegistration;
 
 import ru.futurelink.cexengine.accounting.AccountingService;
 import ru.futurelink.cexengine.accounting.IAccountingService;
+import ru.futurelink.cexengine.consistency.ConsistencyService;
 import ru.futurelink.cexengine.trade.ITradeService;
 import ru.futurelink.cexengine.trade.TradeService;
 
@@ -27,6 +28,9 @@ public class Activator implements BundleActivator {
 	private ServiceRegistration		mAccountingServiceRegistration;
 	private IAccountingService		mAccountingServiceInstance;
 
+	private ConsistencyService		mConsistencyService;
+	private ServiceRegistration		mConsistencyServiceRegistration;
+	
 	public Activator() {}
 
 	public void start(BundleContext context) throws Exception {
@@ -65,7 +69,6 @@ public class Activator implements BundleActivator {
 		
 		// Создаем объект сервиса и регистрируем его
 		mTradeService = new TradeService(mFactory);
-
 		mTradeServiceInstance = mTradeService.CreateInstance();
 		mTradeServiceInstance.StartExecution();
 		
@@ -74,9 +77,8 @@ public class Activator implements BundleActivator {
 					TradeService.class.getName(), mTradeService, null);
 		}
 		
-		// Создаем и регистируем сервис учета
+		// Create and register accounting service
 		mAccountingService = new AccountingService(mFactory);
-
 		mAccountingServiceInstance = mAccountingService.CreateInstance();
 		mAccountingServiceInstance.StartProcessing();
 
@@ -84,6 +86,15 @@ public class Activator implements BundleActivator {
 			mAccountingServiceRegistration = context.registerService(
 					AccountingService.class.getName(), mAccountingService, null);
 		}		
+
+		// Create and register accounting service
+		mConsistencyService = new ConsistencyService(mFactory);
+
+		if(mConsistencyServiceRegistration == null){
+			mConsistencyServiceRegistration = context.registerService(
+					ConsistencyService.class.getName(), mConsistencyService, null);
+		}		
+		
 	}
 
 	public void stop(BundleContext context) throws Exception {
@@ -93,8 +104,12 @@ public class Activator implements BundleActivator {
 		mTradeService = null;
 		
 		mAccountingServiceRegistration.unregister();
+		mAccountingServiceInstance.StopProcessing();
 		mAccountingService = null;
 
+		mConsistencyServiceRegistration.unregister();
+		mConsistencyService = null;
+		
 		mFactory.close();
 		mFactory = null;
 	}

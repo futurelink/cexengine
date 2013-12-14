@@ -18,8 +18,6 @@ import org.eclipse.persistence.jpa.JpaQuery;
 import org.eclipse.persistence.queries.Cursor;
 import org.slf4j.Logger;
 
-import com.mysql.jdbc.exceptions.MySQLTransactionRollbackException;
-
 import ru.futurelink.cexengine.orm.TradeTransaction;
 import ru.futurelink.cexengine.orm.TradeWallet;
 
