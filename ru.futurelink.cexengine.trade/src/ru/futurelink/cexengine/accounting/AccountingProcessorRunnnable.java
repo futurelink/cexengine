@@ -37,8 +37,7 @@ public class AccountingProcessorRunnnable implements Runnable {
 		TradeDeal			deal = null;
 
 		try {			
-			mEm = mEntityManagerFactory.createEntityManager();
-			trans = mEm.getTransaction();			
+			mEm = mEntityManagerFactory.createEntityManager();	
 			while ((mDeals.size() > 0)) {
 				deal = mDeals.poll();	// Берем из очереди
 
@@ -50,7 +49,9 @@ public class AccountingProcessorRunnnable implements Runnable {
 				BigDecimal income = deal.getAmount().multiply(deal.getSellOrder().getPrice());
 				BigDecimal transactionFee = new BigDecimal(0);
 				BigDecimal buyerIncome = deal.getAmount().subtract(transactionFee);
-							
+				
+				trans = mEm.getTransaction();
+
 				// Process sell transactions and mark deal as sell processed
 				if (!deal.getSellProcessed()) {
 					// Зачисляем деньги

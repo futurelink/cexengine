@@ -47,6 +47,10 @@ public class ConsistencyServiceInstance {
 		Query q2 = mEntityManager.createNativeQuery("SELECT sum(amount) FROM `TRADEDEAL`");
 		BigDecimal amountExecuted = (BigDecimal) q.getSingleResult();
 		BigDecimal amountOnDeals = (BigDecimal) q2.getSingleResult();
+		if ((amountOnDeals == null) || (amountExecuted == null) || amountOnDeals.equals(new BigDecimal(0))) {
+			mLogger.info("No deals processed, skipping all tests. Database is empty.");
+			return true;
+		}
 		if (!amountExecuted.divide(new BigDecimal(2)).equals(amountOnDeals)) {
 			mLogger.error("Problem with test 1: deals sum is not a half of all processed orders!");
 			return false; 
@@ -81,19 +85,19 @@ public class ConsistencyServiceInstance {
 			mLogger.error("Problem with test 4: blocked transactions count ({}) is not equal to order count ({})", blockingTransactionsCount, ordersCount);
 			return false;
 		}
-		
-		q = mEntityManager.createNativeQuery(
-				"SELECT COUNT(*) FROM `TRADETRANSACTION` WHERE transactionType = 1");
-		Long unblockingTransactionsCount = (Long) q.getSingleResult();		
 
 		q = mEntityManager.createNativeQuery(
-				"SELECT COUNT(*) FROM `TRADEDEAL`");
-		Long dealsCount = (Long) q.getSingleResult();
-		if (!dealsCount.equals(unblockingTransactionsCount / 2 )) {
-			mLogger.error("Problem with test 4: unblocking transactions count / 2 ({}) is not equal to deal count ({})", unblockingTransactionsCount / 2, dealsCount);
+				"SELECT COUNT(*) / 2 FROM `TRADETRANSACTION` WHERE transactionType = 1");
+		BigDecimal unblockingTransactionsCount = (BigDecimal) q.getSingleResult();		
+
+		q = mEntityManager.createNativeQuery(
+				"SELECT COUNT(*) / 1 FROM `TRADEDEAL` WHERE buyProcessed = 1 OR sellProcessed = 1");
+		BigDecimal dealsCount = (BigDecimal) q.getSingleResult();
+		if (!dealsCount.equals(unblockingTransactionsCount)) {
+			mLogger.error("Problem with test 4: unblocking transactions count / 2 ({}) is not equal to deal count ({})", unblockingTransactionsCount, dealsCount);
 			return false;
 		}
-		
+
 		mLogger.info("Test 4 passed.");
 		
 		return true;

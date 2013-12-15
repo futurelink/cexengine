@@ -7,10 +7,13 @@ import javax.persistence.Persistence;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ru.futurelink.cexengine.accounting.AccountingService;
 import ru.futurelink.cexengine.accounting.IAccountingService;
 import ru.futurelink.cexengine.consistency.ConsistencyService;
+import ru.futurelink.cexengine.consistency.ConsistencyServiceInstance;
 import ru.futurelink.cexengine.trade.ITradeService;
 import ru.futurelink.cexengine.trade.TradeService;
 
@@ -31,15 +34,21 @@ public class Activator implements BundleActivator {
 	private ConsistencyService		mConsistencyService;
 	private ServiceRegistration		mConsistencyServiceRegistration;
 	
+	private Logger					mLogger;
+	public BundleContext			mContext;
+	
 	public Activator() {}
 
-	public void start(BundleContext context) throws Exception {
-		System.out.println("Initializing database engine...");
+	public void start(BundleContext context) throws Exception {		
+		mLogger = LoggerFactory.getLogger(getClass().getName());
+		
+		mLogger.info("Initializing CEX engine...");
 		mFactory = Persistence.createEntityManagerFactory("cex");
-
+		mContext = context;
+		
 		@SuppressWarnings("unused")
 		EntityManager m = mFactory.createEntityManager();
-		
+
 		/*TradeCurrency c1 = new TradeCurrency();
 		c1.setTitle("USD");
 
@@ -66,7 +75,20 @@ public class Activator implements BundleActivator {
 			m.persist(acc);
 			m.getTransaction().commit();			
 		}*/
-		
+
+		// Create and register accounting service
+		mConsistencyService = new ConsistencyService(mFactory);
+		if(mConsistencyServiceRegistration == null){
+			mConsistencyServiceRegistration = context.registerService(
+					ConsistencyService.class.getName(), mConsistencyService, null);
+
+			if (mConsistencyService != null) {
+				ConsistencyServiceInstance instance = mConsistencyService.CreateInstance();
+				if (!instance.RunTest())
+					return;
+			}
+		}
+				
 		// Создаем объект сервиса и регистрируем его
 		mTradeService = new TradeService(mFactory);
 		mTradeServiceInstance = mTradeService.CreateInstance();
@@ -85,19 +107,12 @@ public class Activator implements BundleActivator {
 		if(mAccountingServiceRegistration == null){
 			mAccountingServiceRegistration = context.registerService(
 					AccountingService.class.getName(), mAccountingService, null);
-		}		
-
-		// Create and register accounting service
-		mConsistencyService = new ConsistencyService(mFactory);
-
-		if(mConsistencyServiceRegistration == null){
-			mConsistencyServiceRegistration = context.registerService(
-					ConsistencyService.class.getName(), mConsistencyService, null);
-		}		
-		
+		}				
 	}
 
 	public void stop(BundleContext context) throws Exception {
+		mLogger.info("Stopping CEX engine...");
+		
 		mTradeServiceRegistration.unregister();
 		mTradeServiceInstance.StopExecution();
 		mTradeServiceInstance = null;
@@ -113,5 +128,4 @@ public class Activator implements BundleActivator {
 		mFactory.close();
 		mFactory = null;
 	}
-
 }
