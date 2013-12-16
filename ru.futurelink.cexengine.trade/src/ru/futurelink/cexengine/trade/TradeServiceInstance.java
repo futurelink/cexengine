@@ -9,6 +9,9 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.TypedQuery;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ru.futurelink.cexengine.orm.TradeAccount;
 import ru.futurelink.cexengine.orm.TradeTool;
 import ru.futurelink.cexengine.orm.TradeWallet;
@@ -23,8 +26,11 @@ public class TradeServiceInstance implements ITradeService {
 	
 	private EntityManagerFactory		mEntityManagerFactory;
 	private ThreadLocal<EntityManager>	mEm;	// Локальный менеджер
+	private Logger						mLogger;
 	
 	public TradeServiceInstance(EntityManagerFactory entityManagerFactory) {
+		mLogger = LoggerFactory.getLogger(getClass().getName());
+		
 		mEntityManagerFactory = entityManagerFactory;
 		mEm =new ThreadLocal<EntityManager>();
 		mEm.set(mEntityManagerFactory.createEntityManager());
@@ -65,6 +71,7 @@ public class TradeServiceInstance implements ITradeService {
 
 	@Override
 	public TradeTool GetTool(String toolName) {
+		// Select tool by name? if doesn't exist create the new one
 		TypedQuery<TradeTool> toolQuery = mEm.get().createQuery(
 				"select tool from TradeTool tool where tool.mTitle = :title", TradeTool.class);
 		toolQuery.setParameter("title", toolName);
@@ -81,7 +88,7 @@ public class TradeServiceInstance implements ITradeService {
 		accQuery.setParameter("accNumber", number);
 		if (accQuery.getResultList().size() > 0) {
 			TradeAccount acc = accQuery.getResultList().get(0);
-			System.out.println("Got account by number "+number+": "+acc.getId().toString());
+			mLogger.debug("Got account by number {}: {}", number, acc.getId());
 			return acc;
 		}
 		return null;
