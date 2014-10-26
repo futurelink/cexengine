@@ -20,7 +20,6 @@ public class Activator implements BundleActivator {
 	public final TerminationThread thread = new TerminationThread();
 	public BundleContext			mContext;
 
-	@Override
 	public void start(BundleContext context) throws Exception {
 		mLogger = LoggerFactory.getLogger(getClass().getName());
 		
@@ -32,13 +31,11 @@ public class Activator implements BundleActivator {
 		//context.addBundleListener(new ShutdownLoggingListener());
 	}
 
-	@Override
 	public void stop(BundleContext arg0) throws Exception {}
 
 	@SuppressWarnings("unused")
 	private final class ShutdownLoggingListener implements SynchronousBundleListener {
-		@Override
-        public void bundleChanged(BundleEvent event) {
+		public void bundleChanged(BundleEvent event) {
             if (BundleEvent.STOPPING == event.getType() && event.getBundle() == mContext.getBundle()) {
     	    	mLogger.info("Shutting down, finishing bundle!");
 	    		Runtime.getRuntime().removeShutdownHook(thread);
@@ -69,7 +66,9 @@ public class Activator implements BundleActivator {
 	    		mLogger.info("Shutting down the system...");
 	    		mContext.getBundle(0).stop();
 	    		Thread.sleep(1000);
-	    	} catch (BundleException | InterruptedException e) {
+	    	} catch (BundleException e) {
+	    		e.printStackTrace();
+			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 	    }

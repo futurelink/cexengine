@@ -1,8 +1,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>ru.futurelink.shutdown</groupId>
-  <artifactId>ru.futurelink.shutdown</artifactId>
+  <groupId>ru.futurelink</groupId>
+  <artifactId>shutdown</artifactId>
   <version>0.0.1-SNAPSHOT</version>
+  <packaging>bundle</packaging>
   <build>
     <sourceDirectory>src</sourceDirectory>
     <plugins>
@@ -14,6 +15,25 @@
           <target/>
         </configuration>
       </plugin>
+	  <plugin>
+		<groupId>org.apache.felix</groupId>
+ 		<artifactId>maven-bundle-plugin</artifactId>
+    	<extensions>true</extensions>
+    	<configuration>
+         	<source>1.7</source>
+         	<target>1.7</target>    	    
+        <manifestLocation>META-INF</manifestLocation>
+       	<instructions>
+           	<Bundle-SymbolicName>${project.groupId}.${project.artifactId};singleton:=true</Bundle-SymbolicName>
+           	<Bundle-Version>${project.version}</Bundle-Version>
+           	<Bundle-ClassPath>.</Bundle-ClassPath>
+           	<Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
+           	<Export-Package>ru.futurelink.shutdown.*</Export-Package>
+           	<Bundle-Activator>ru.futurelink.mo.shutdown.Activator</Bundle-Activator>
+           	<Bundle-RequiredExecutionEnvironment>JavaSE-1.7</Bundle-RequiredExecutionEnvironment>
+       	</instructions>
+    	</configuration>
+	  </plugin>      
     </plugins>
   </build>
 </project>
